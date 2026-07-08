@@ -1,0 +1,14 @@
+﻿<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>OCR → Excel</title>
+</head>
+<body>
+    <h1>Загрузка фото бланка</h1>
+    <form action="/run" method="post" enctype="multipart/form-data">
+        <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.pdf" required>
+        <button type="submit">Загрузить фото и создать Excel</button>
+    </form>
+</body>
+</html>
