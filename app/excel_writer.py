@@ -8,7 +8,11 @@ START_ROW = 8
 END_ROW = 72
 
 BASE_DIR = Path(__file__).resolve().parent
+
+# Пользовательский активный шаблон (если загружен через веб-интерфейс)
 ACTIVE_TEMPLATE_PATH = BASE_DIR / "storage" / "templates" / "current_template.xlsm"
+# Дефолтный шаблон из репозитория, который всегда есть после деплоя
+DEFAULT_TEMPLATE_PATH = BASE_DIR / "template.xlsm"
 
 
 def extract_month_from_c4(ws):
@@ -140,18 +144,32 @@ def validate_row_count(ocr_rows, start_row, end_row):
     return capacity, actual
 
 
-def get_template_path() -> Path:
-    if not ACTIVE_TEMPLATE_PATH.exists():
-        raise FileNotFoundError(
-            f"Не найден активный шаблон Excel: {ACTIVE_TEMPLATE_PATH}"
-        )
-    return ACTIVE_TEMPLATE_PATH
+def resolve_template_path() -> Path:
+    """
+    Логика выбора шаблона:
+    1. Если есть пользовательский current_template.xlsm — используем его.
+    2. Если его нет — берём дефолтный template.xlsm из репозитория.
+    3. Если нет ни того, ни другого — кидаем понятную ошибку.
+    """
+    if ACTIVE_TEMPLATE_PATH.exists():
+        print(f"USING ACTIVE TEMPLATE: {ACTIVE_TEMPLATE_PATH}")
+        return ACTIVE_TEMPLATE_PATH
+
+    if DEFAULT_TEMPLATE_PATH.exists():
+        print(f"USING DEFAULT TEMPLATE: {DEFAULT_TEMPLATE_PATH}")
+        return DEFAULT_TEMPLATE_PATH
+
+    raise FileNotFoundError(
+        f"Не найден ни пользовательский шаблон {ACTIVE_TEMPLATE_PATH}, "
+        f"ни дефолтный шаблон {DEFAULT_TEMPLATE_PATH}. "
+        f"Нужно добавить хотя бы template.xlsm в проект."
+    )
 
 
 def write_rows_to_excel(ocr_rows, output_path: str):
-    print("EXCEL_WRITER_FLEX_DATE_TIME_WITH_VALIDATION")
+    print("EXCEL_WRITER_FLEX_DATE_TIME_WITH_VALIDATION_FALLBACK_TEMPLATE")
 
-    template_path = get_template_path()
+    template_path = resolve_template_path()
 
     wb = load_workbook(template_path, keep_vba=True)
     ws = wb.active
