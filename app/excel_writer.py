@@ -3,8 +3,12 @@ from pathlib import Path
 from datetime import datetime
 
 from openpyxl import load_workbook
+
 START_ROW = 8
 END_ROW = 72
+
+BASE_DIR = Path(__file__).resolve().parent
+ACTIVE_TEMPLATE_PATH = BASE_DIR / "storage" / "templates" / "current_template.xlsm"
 
 
 def extract_month_from_c4(ws):
@@ -136,13 +140,18 @@ def validate_row_count(ocr_rows, start_row, end_row):
     return capacity, actual
 
 
+def get_template_path() -> Path:
+    if not ACTIVE_TEMPLATE_PATH.exists():
+        raise FileNotFoundError(
+            f"Не найден активный шаблон Excel: {ACTIVE_TEMPLATE_PATH}"
+        )
+    return ACTIVE_TEMPLATE_PATH
+
+
 def write_rows_to_excel(ocr_rows, output_path: str):
     print("EXCEL_WRITER_FLEX_DATE_TIME_WITH_VALIDATION")
 
-    template_path = Path(__file__).resolve().parent / "template.xlsm"
-
-    if not template_path.exists():
-        raise FileNotFoundError(f"Не найден шаблон Excel: {template_path}")
+    template_path = get_template_path()
 
     wb = load_workbook(template_path, keep_vba=True)
     ws = wb.active
@@ -189,6 +198,3 @@ def write_rows_to_excel(ocr_rows, output_path: str):
     print("BEFORE_SAVE_EXCEL")
     wb.save(output_path)
     print(f"SAVED EXCEL: {output_path}")
-
-
-

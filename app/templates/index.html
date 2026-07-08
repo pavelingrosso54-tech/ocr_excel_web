@@ -17,6 +17,14 @@
             --border: #e2e8f0;
             --primary: #2563eb;
             --primary-hover: #1d4ed8;
+            --secondary: #ffffff;
+            --secondary-hover: #f8fafc;
+            --success-bg: #ecfdf5;
+            --success-border: #bbf7d0;
+            --success-text: #166534;
+            --warn-bg: #fff7ed;
+            --warn-border: #fed7aa;
+            --warn-text: #9a3412;
             --shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
             --radius: 22px;
         }
@@ -208,22 +216,127 @@
             margin-top: 18px;
         }
 
-        button {
-            border: none;
+        .btn,
+        button,
+        .link-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
             border-radius: 14px;
-            background: var(--primary);
-            color: white;
             padding: 15px 18px;
             font: inherit;
             font-size: 15px;
             font-weight: 700;
+            text-decoration: none;
             cursor: pointer;
-            transition: background 0.2s ease, transform 0.15s ease;
+            transition: background 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
         }
 
-        button:hover {
+        button,
+        .btn-primary {
+            border: none;
+            background: var(--primary);
+            color: white;
+        }
+
+        button:hover,
+        .btn-primary:hover {
             background: var(--primary-hover);
             transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            border: 1px solid var(--border);
+            background: var(--secondary);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: var(--secondary-hover);
+            transform: translateY(-1px);
+        }
+
+        .template-panel {
+            margin-top: 18px;
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            background: #ffffff;
+            padding: 18px;
+        }
+
+        .template-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .template-title {
+            margin: 0 0 4px;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .template-text {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.55;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            padding: 7px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .status-ok {
+            background: var(--success-bg);
+            border: 1px solid var(--success-border);
+            color: var(--success-text);
+        }
+
+        .status-missing {
+            background: var(--warn-bg);
+            border: 1px solid var(--warn-border);
+            color: var(--warn-text);
+        }
+
+        .template-name {
+            margin: 0 0 14px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            font-size: 14px;
+            color: #334155;
+            word-break: break-word;
+        }
+
+        .template-actions {
+            display: grid;
+            gap: 12px;
+        }
+
+        .template-upload-form {
+            display: grid;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .template-help {
+            margin: 12px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
         }
 
         .note {
@@ -288,6 +401,10 @@
 
             .card-title {
                 font-size: 24px;
+            }
+
+            .template-head {
+                flex-direction: column;
             }
 
             .bottom-image {
@@ -356,24 +473,60 @@
                         <div class="actions">
                             <button type="submit">Загрузить фото и создать Excel</button>
                         </div>
-
-                        <div class="note">
-                            <p class="note-title">Что важно перед отправкой</p>
-                            <ul>
-                                <li>Файл должен быть читаемым и не обрезанным.</li>
-                                <li>PDF и изображения лучше загружать в хорошем качестве.</li>
-                                <li>После обработки результат формируется на основе Excel-шаблона.</li>
-                            </ul>
-                        </div>
-
-                        <div class="bottom-image-wrap">
-                            <img src="/static/img/logo-pb.jpg" alt="Логотип" class="bottom-image">
-                        </div>
                     </form>
+
+                    <section class="template-panel">
+                        <div class="template-head">
+                            <div>
+                                <p class="template-title">Шаблон Excel</p>
+                                <p class="template-text">Можно скачать текущий шаблон, отредактировать его и загрузить новую версию обратно.</p>
+                            </div>
+
+                            {% if template_exists %}
+                                <span class="status-badge status-ok">Шаблон загружен</span>
+                            {% else %}
+                                <span class="status-badge status-missing">Шаблон не загружен</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="template-name">
+                            Текущий файл: {{ template_name }}
+                        </div>
+
+                        <div class="template-actions">
+                            {% if template_exists %}
+                                <a class="btn btn-secondary" href="/template/download">Скачать текущий шаблон</a>
+                            {% else %}
+                                <a class="btn btn-secondary" href="#" onclick="return false;" aria-disabled="true" style="opacity: 0.55; pointer-events: none;">Скачать текущий шаблон</a>
+                            {% endif %}
+                        </div>
+
+                        <form action="/template/upload" method="post" enctype="multipart/form-data" class="template-upload-form">
+                            <label class="upload-label" for="template_file">Заменить шаблон</label>
+                            <input id="template_file" type="file" name="template_file" accept=".xlsm" required>
+                            <button type="submit" class="btn-primary">Загрузить новый шаблон</button>
+                        </form>
+
+                        <p class="template-help">
+                            Поддерживается только формат .xlsm. После загрузки новый шаблон станет активным для следующей обработки.
+                        </p>
+                    </section>
+
+                    <div class="note">
+                        <p class="note-title">Что важно перед отправкой</p>
+                        <ul>
+                            <li>Файл должен быть читаемым и не обрезанным.</li>
+                            <li>PDF и изображения лучше загружать в хорошем качестве.</li>
+                            <li>После обработки результат формируется на основе активного Excel-шаблона.</li>
+                        </ul>
+                    </div>
+
+                    <div class="bottom-image-wrap">
+                        <img src="/static/img/logo-pb.jpg" alt="Логотип" class="bottom-image">
+                    </div>
                 </div>
             </div>
         </section>
     </main>
 </body>
 </html>
-

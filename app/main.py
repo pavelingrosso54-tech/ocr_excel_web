@@ -2,18 +2,25 @@
 import shutil
 import traceback
 
-from fastapi import FastAPI, Request, UploadFile, File
-from fastapi.responses import HTMLResponse, FileResponse, PlainTextResponse
+from fastapi import FastAPI, Request, UploadFile, File, HTTPException
+from fastapi.responses import HTMLResponse, FileResponse, PlainTextResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.excel_writer import write_rows_to_excel
-from app.ocr_yandex import get_yandex_rows  # << вместо локального OCR
+from app.ocr_yandex import get_yandex_rows
+
 
 app = FastAPI(debug=True)
 
 BASE_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
+
+STORAGE_DIR = BASE_DIR / "storage"
+TEMPLATE_DIR = STORAGE_DIR / "templates"
+TEMPLATE_DIR.mkdir(parents=True, exist_ok=True)
+
+ACTIVE_TEMPLATE_PATH = TEMPLATE_DIR / "current_template.xlsm"
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
@@ -23,8 +30,46 @@ async def index(request: Request):
     return templates.TemplateResponse(
         request=request,
         name="index.html",
-        context={}
+        context={
+            "template_exists": ACTIVE_TEMPLATE_PATH.exists(),
+            "template_name": ACTIVE_TEMPLATE_PATH.name if ACTIVE_TEMPLATE_PATH.exists() else "Шаблон не загружен"
+        }
     )
+
+
+@app.get("/template/download")
+async def download_template():
+    if not ACTIVE_TEMPLATE_PATH.exists():
+        raise HTTPException(status_code=404, detail="Шаблон не найден")
+
+    return FileResponse(
+        path=str(ACTIVE_TEMPLATE_PATH),
+        filename="template.xlsm",
+        media_type="application/vnd.ms-excel.sheet.macroEnabled.12"
+    )
+
+
+@app.post("/template/upload")
+async def upload_template(template_file: UploadFile = File(...)):
+    try:
+        if not template_file.filename:
+            raise HTTPException(status_code=400, detail="Файл не выбран")
+
+        ext = Path(template_file.filename).suffix.lower()
+        if ext != ".xlsm":
+            raise HTTPException(status_code=400, detail="Разрешён только файл .xlsm")
+
+        with ACTIVE_TEMPLATE_PATH.open("wb") as buffer:
+            shutil.copyfileobj(template_file.file, buffer)
+
+        return RedirectResponse(url="/", status_code=303)
+
+    except HTTPException:
+        raise
+    except Exception:
+        err = traceback.format_exc()
+        print(err)
+        return PlainTextResponse(err, status_code=500)
 
 
 @app.post("/run")
@@ -41,7 +86,6 @@ async def run_process(image_file: UploadFile = File(...)):
 
         print("IMAGE SAVED:", image_path.exists())
 
-        # Яндекс OCR
         yandex_rows = get_yandex_rows(str(image_path))
 
         print("YANDEX ROWS COUNT:", len(yandex_rows))
