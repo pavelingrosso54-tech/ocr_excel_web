@@ -139,7 +139,7 @@ def validate_row_count(ocr_rows, start_row, end_row):
 def write_rows_to_excel(ocr_rows, output_path: str):
     print("EXCEL_WRITER_FLEX_DATE_TIME_WITH_VALIDATION")
 
-    template_path = Path(r"H:\Projects\info_teke\01.Инфо для покупателей на витрине.xlsm")
+    template_path = Path(__file__).resolve().parent / "template.xlsm"
 
     if not template_path.exists():
         raise FileNotFoundError(f"Не найден шаблон Excel: {template_path}")
@@ -189,5 +189,6 @@ def write_rows_to_excel(ocr_rows, output_path: str):
     print("BEFORE_SAVE_EXCEL")
     wb.save(output_path)
     print(f"SAVED EXCEL: {output_path}")
+
 
 
