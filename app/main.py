@@ -5,6 +5,7 @@ import traceback
 from fastapi import FastAPI, Request, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse, PlainTextResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 
 from app.excel_writer import write_rows_to_excel
 from app.ocr_yandex import get_yandex_rows
@@ -13,6 +14,7 @@ from app.ocr_yandex import get_yandex_rows
 app = FastAPI(debug=True)
 
 BASE_DIR = Path(__file__).resolve().parent
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
@@ -116,3 +118,4 @@ async def run_process(image_file: UploadFile = File(...)):
         err = traceback.format_exc()
         print(err)
         return PlainTextResponse(err, status_code=500)
+
