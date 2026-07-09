@@ -5,11 +5,17 @@ import cv2
 import easyocr
 import fitz
 
-
-ROWS_COUNT = 65  # строки для Excel B8:C72
+ROWS_COUNT = 65
 SUPPORTED_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png"}
 
-reader = easyocr.Reader(["ru"], gpu=False)
+_reader = None
+
+def get_reader():
+    global _reader
+    if _reader is None:
+        print("Initializing EasyOCR reader...")
+        _reader = easyocr.Reader(["ru"], gpu=False)
+    return _reader
 
 
 def normalize_text(s: str) -> str:
